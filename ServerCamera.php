@@ -208,10 +208,10 @@ final class CameraGD
         defined('SERVER_CAMERA_S') || define('SERVER_CAMERA_S', ($settings['thumbnail-settings']['path-settings']['server-camera']));
 
         /* validate hotel requester image country */
-        defined('HOTEL_COUNTRY') || define('HOTEL_COUNTRY', ((($settings['image-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : ($settings['image-settings']['path-settings']['hotel-country'])));
+        defined('HOTEL_COUNTRY') || define('HOTEL_COUNTRY', ((($settings['image-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : strtolower($settings['image-settings']['path-settings']['hotel-country'])));
 
         /* validate hotel requester thumbnail country */
-        defined('HOTEL_COUNTRY_S') || define('HOTEL_COUNTRY_S', ((($settings['thumbnail-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : ($settings['thumbnail-settings']['path-settings']['hotel-country'])));
+        defined('HOTEL_COUNTRY_S') || define('HOTEL_COUNTRY_S', ((($settings['thumbnail-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : strtolower($settings['thumbnail-settings']['path-settings']['hotel-country'])));
 
         /* do the urls for main image */
         $image_url = str_replace('[SERVER_CAMERA]', SERVER_CAMERA, $image_url);
@@ -259,7 +259,7 @@ final class CameraGD
         $ip_data = json_decode(file_get_contents("http://www.geoplugin.net/json.gp?ip=$ip"));
 
         /* return country code */
-        return (($ip_data && $ip_data->geoplugin_countryCode != null) ? $ip_data->geoplugin_countryCode : 'US');
+        return strtolower((($ip_data && $ip_data->geoplugin_countryCode != null) ? $ip_data->geoplugin_countryCode : 'US'));
     }
 
     /**
