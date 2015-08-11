@@ -53,6 +53,9 @@ final class CameraGD
      */
     function __construct($settings = [])
     {
+        /* the header */
+        header('Content-Type: image/png');
+
         /* set settings variables */
         $this->settings = $settings;
 
@@ -70,11 +73,11 @@ final class CameraGD
     private function trace_routers()
     {
         /* trace routers by get */
-        switch ($_GET):
+        switch ($_SERVER['QUERY_STRING']):
             case 'install':
                 return $this->actions('install', true);
             case 'test':
-                return $this->actions('test', true);
+                return $this->actions('test', false);
             case 'run':
             default:
                 return $this->actions('run', false);
@@ -205,10 +208,10 @@ final class CameraGD
         defined('SERVER_CAMERA_S') || define('SERVER_CAMERA_S', ($settings['thumbnail-settings']['path-settings']['server-camera']));
 
         /* validate hotel requester image country */
-        defined('HOTEL_COUNTRY') || define('HOTEL_COUNTRY', ((($settings['image-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country(($_SERVER['HTTP_CLIENT_IP']), ($_SERVER['HTTP_X_FORWARDED_FOR']), ($_SERVER['REMOTE_ADDR'])) : ($settings['image-settings']['path-settings']['hotel-country'])));
+        defined('HOTEL_COUNTRY') || define('HOTEL_COUNTRY', ((($settings['image-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : ($settings['image-settings']['path-settings']['hotel-country'])));
 
         /* validate hotel requester thumbnail country */
-        defined('HOTEL_COUNTRY_S') || define('HOTEL_COUNTRY_S', ((($settings['thumbnail-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country(($_SERVER['HTTP_CLIENT_IP']), ($_SERVER['HTTP_X_FORWARDED_FOR']), ($_SERVER['REMOTE_ADDR'])) : ($settings['thumbnail-settings']['path-settings']['hotel-country'])));
+        defined('HOTEL_COUNTRY_S') || define('HOTEL_COUNTRY_S', ((($settings['thumbnail-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : ($settings['thumbnail-settings']['path-settings']['hotel-country'])));
 
         /* do the urls for main image */
         $image_url = str_replace('[SERVER_CAMERA]', SERVER_CAMERA, $image_url);
@@ -254,10 +257,9 @@ final class CameraGD
         /* filter ip data, check if is valid, and get geoplugin ip data */
         $ip      = ((filter_var($client, FILTER_VALIDATE_IP)) ? $client : ((filter_var($forward, FILTER_VALIDATE_IP)) ? $forward : $remote));
         $ip_data = json_decode(file_get_contents("http://www.geoplugin.net/json.gp?ip=$ip"));
-        $result  = (($ip_data && $ip_data->geoplugin_countryName != null) ? $ip_data->geoplugin_countryName : 'US');
 
         /* return country code */
-        return geoip_country_code_by_name($result);
+        return (($ip_data && $ip_data->geoplugin_countryCode != null) ? $ip_data->geoplugin_countryCode : 'US');
     }
 
     /**
@@ -284,12 +286,12 @@ final class CameraGD
         $this->image_create($show_image);
 
         /* i must give back the url of main image because CLIENT need's */
-        if (!$show_image)
-            return IMAGE_URL;
+        if ($show_image)
+            return $this->image;
 
-        /* if need to show image */
-        header('Content-Type: image/png');
-        return $this->image;
+        /* if don't need to show image */
+        header('Content-Type:text/html; charset=UTF-8');
+        return IMAGE_URL;
     }
 
     /**
@@ -526,7 +528,7 @@ final class CameraGD
         foreach ($this->json['sprites'] as $sprite):
 
             /* get out of there */
-            $tha_sprite = imagecreatefrompng(SPRITES_ROOT . $sprite['name'] . '.png');
+            if (is_bool($tha_sprite = @imagecreatefrompng(SPRITES_ROOT . $sprite['name'] . '.png'))) continue;
 
             /* i'm the alpha and omega, no, just alpha. */
             $alpha = ((isset($sprite['alpha'])) ? ((int)$sprite['alpha']) : 100);
@@ -661,8 +663,8 @@ $settings = [
         ]
     ],
     'folder-settings' => [
-        'masks-folder' => 'masks',
-        'sprites-folder' => 'sprites'
+        'masks-folder' => '/masks/',
+        'sprites-folder' => '/sprites/'
     ]
 ];
 
