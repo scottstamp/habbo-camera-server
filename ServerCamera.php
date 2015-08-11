@@ -42,78 +42,181 @@ final class CameraGD
     private $image;
     /** @var resource */
     private $image_small;
+    /** @var array */
+    private $settings = [];
 
     /**
      * Do the Thing
      * @author sant0ro
      *
-     * @param string $image_url
-     * @param string $image_small_url
-     * @param int $image_w
-     * @param int $image_h
-     * @param int $image_s_w
-     * @param int $image_s_h
+     * @param array $settings
      */
-    function __construct($image_url = '', $image_small_url = '', $image_w = 320, $image_h = 320, $image_s_w = 100, $image_s_h = 100)
+    function __construct($settings = [])
+    {
+        /* set settings variables */
+        $this->settings = $settings;
+
+        /* do an action */
+        echo $this->trace_routers();
+    }
+
+    /**
+     * trace routers and do the actions
+     * @author Claudio Santoro
+     * @todo Improve this
+     *
+     * @return mixed
+     */
+    private function trace_routers()
+    {
+        /* trace routers by get */
+        switch ($_GET):
+            case 'install':
+                return $this->actions('install', true);
+            case 'test':
+                return $this->actions('test', true);
+            case 'run':
+            default:
+                return $this->actions('run', false);
+        endswitch;
+    }
+
+    /**
+     * Do the Camera Script
+     * @author Claudio Santoro
+     *
+     * @param string $json
+     * @param bool $show_image
+     * @return mixed
+     */
+    private function do_it($json = '', $show_image = false)
     {
         /* let's get php input */
-        if (is_null($this->json = json_decode(file_get_contents('php://input'), true)))
-            echo $this->just_die('500', 'the php input, isn\'t a valid jSON data!', true);
+        if (is_null($this->json = json_decode($json, true)))
+            return $this->just_die('500', 'the php input, isn\'t a valid jSON data!', true);
 
         /* other prob y? */
         if ((!isset($this->json['roomid'])) || (!isset($this->json['timestamp'])))
-            echo $this->just_die('403', 'the jSON doesn\'t contains timestamp || roomid', true);
+            return $this->just_die('403', 'the jSON doesn\'t contains timestamp || roomid', true);
 
         /* set the user-defined variables */
-        $this->set_variables($image_url, $image_small_url, $image_w, $image_h, $image_s_w, $image_s_h);
+        $this->set_variables($this->settings, ($this->settings['image-settings']['path-settings']['image-url']), ($this->settings['thumbnail-settings']['path-settings']['image-url']));
 
         /* i love this song */
-        echo $this->let_it_go();
+        return $this->let_it_go($show_image);
+    }
+
+    /**
+     * do system actions...
+     * @author Claudio Santoro
+     *
+     * @param string $action_name
+     * @param bool|false $only_white_list
+     * @return string|void
+     */
+    private function actions($action_name = '', $only_white_list = false)
+    {
+        /* check if your ip is in white list */
+        if (($only_white_list) && (!in_array($_SERVER['REMOTE_ADDR'], $this->settings['white-list'])))
+            return $this->just_die('403', 'you have not authorization to execute that item', true);
+
+        /* select an action */
+        switch ($action_name):
+            case 'run':
+                return $this->do_it(file_get_contents('php://input'));
+            case 'install':
+                return $this->create_folders();
+            case 'test':
+                return $this->test_json();
+            default:
+                return $this->just_die('001', 'this action doesn\'t exists', true);
+        endswitch;
+    }
+
+    /**
+     * do the script in test mode
+     * @author Claudio Santoro
+     * @observation Used a Default jSON of Habbo Camera
+     *
+     * @return mixed
+     */
+    private function test_json()
+    {
+        /* return the message with default mode */
+        return $this->do_it('{ "planes": [ { "z": 2540.7555503285, "bottomAligned": false, "color": 0, "cornerPoints": [ { "x": 320, "y": 320 }, { "x": 0, "y": 320 }, { "x": 320, "y": 0 }, { "x": 0, "y": 0 } ], "texCols": [] }, { "z": 2410.9300623285, "bottomAligned": false, "color": 15790320, "cornerPoints": [ { "x": 177, "y": 192 }, { "x": 145, "y": 176 }, { "x": 209, "y": 176 }, { "x": 177, "y": 160 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 1506.1493179876, "bottomAligned": false, "color": 10066329, "cornerPoints": [ { "x": 273, "y": 29 }, { "x": 265, "y": 25 }, { "x": 281, "y": 25 }, { "x": 273, "y": 21 } ], "texCols": [] }, { "z": 1505.9755480235, "bottomAligned": false, "color": 10066329, "cornerPoints": [ { "x": 465, "y": 125 }, { "x": 273, "y": 29 }, { "x": 473, "y": 121 }, { "x": 281, "y": 25 } ], "texCols": [] }, { "z": 1505.9705480233, "bottomAligned": false, "color": 10066329, "cornerPoints": [ { "x": 49, "y": 141 }, { "x": 41, "y": 137 }, { "x": 273, "y": 29 }, { "x": 265, "y": 25 } ], "texCols": [] }, { "z": 1502.4311487396, "bottomAligned": false, "color": 10066329, "cornerPoints": [ { "x": 49, "y": 141 }, { "x": -15, "y": 109 }, { "x": 57, "y": 137 }, { "x": -7, "y": 105 } ], "texCols": [] }, { "masks": [ { "name": "door_64", "flipH": false, "flipV": false, "location": { "x": 128, "y": 29 } } ], "z": 1005.8245539166, "bottomAligned": false, "color": 13421772, "cornerPoints": [ { "x": 273, "y": 176 }, { "x": 49, "y": 288 }, { "x": 273, "y": 29 }, { "x": 49, "y": 141 } ], "texCols": [{"assetNames": ["wall_texture_64_3_wall_color_jagged3"]}] }, { "z": 1005.8224287303, "bottomAligned": false, "color": 16777215, "cornerPoints": [ { "x": 465, "y": 240 }, { "x": 273, "y": 144 }, { "x": 465, "y": 125 }, { "x": 273, "y": 29 } ], "texCols": [{"assetNames": ["wall_texture_64_3_wall_color_jagged3"]}] }, { "z": 1002.2851546329, "bottomAligned": false, "color": 16777215, "cornerPoints": [ { "x": 49, "y": 288 }, { "x": -15, "y": 256 }, { "x": 49, "y": 141 }, { "x": -15, "y": 109 } ], "texCols": [{"assetNames": ["wall_texture_64_3_wall_color_jagged3"]}] }, { "z": 1001.9421546338, "bottomAligned": false, "color": 15790320, "cornerPoints": [ { "x": -79, "y": 352 }, { "x": -143, "y": 320 }, { "x": 49, "y": 288 }, { "x": -15, "y": 256 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 1001.4078447412, "bottomAligned": false, "color": 15790320, "cornerPoints": [ { "x": 241, "y": 384 }, { "x": 49, "y": 288 }, { "x": 281, "y": 364 }, { "x": 89, "y": 268 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 1001.4038447411, "bottomAligned": false, "color": 13684944, "cornerPoints": [ { "x": 281, "y": 364 }, { "x": 89, "y": 268 }, { "x": 281, "y": 356 }, { "x": 89, "y": 260 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 1000.5319949204, "bottomAligned": false, "color": 15790320, "cornerPoints": [ { "x": 113, "y": 448 }, { "x": -79, "y": 352 }, { "x": 241, "y": 384 }, { "x": 49, "y": 288 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 999.57783340867, "bottomAligned": false, "color": 15790320, "cornerPoints": [ { "x": 281, "y": 356 }, { "x": 89, "y": 260 }, { "x": 289, "y": 352 }, { "x": 97, "y": 256 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 999.57383340859, "bottomAligned": false, "color": 13684944, "cornerPoints": [ { "x": 289, "y": 352 }, { "x": 97, "y": 256 }, { "x": 289, "y": 344 }, { "x": 97, "y": 248 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 997.74782207614, "bottomAligned": false, "color": 15790320, "cornerPoints": [ { "x": 289, "y": 344 }, { "x": 97, "y": 248 }, { "x": 297, "y": 340 }, { "x": 105, "y": 244 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 997.74382207606, "bottomAligned": false, "color": 13684944, "cornerPoints": [ { "x": 297, "y": 340 }, { "x": 105, "y": 244 }, { "x": 297, "y": 332 }, { "x": 105, "y": 236 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 997.44642873053, "bottomAligned": false, "color": 15790320, "cornerPoints": [ { "x": 305, "y": 320 }, { "x": 113, "y": 224 }, { "x": 465, "y": 240 }, { "x": 273, "y": 144 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 995.91781074361, "bottomAligned": false, "color": 15790320, "cornerPoints": [ { "x": 297, "y": 332 }, { "x": 105, "y": 236 }, { "x": 305, "y": 328 }, { "x": 113, "y": 232 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 995.91381074353, "bottomAligned": false, "color": 13684944, "cornerPoints": [ { "x": 305, "y": 328 }, { "x": 113, "y": 232 }, { "x": 305, "y": 320 }, { "x": 113, "y": 224 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] }, { "z": 995.20873088684, "bottomAligned": false, "color": 11579568, "cornerPoints": [ { "x": 465, "y": 248 }, { "x": 305, "y": 328 }, { "x": 465, "y": 240 }, { "x": 305, "y": 320 } ], "texCols": [{"assetNames": ["floor_texture_64_1_floor_tiles5"]}] } ], "sprites": [ { "name": "pixel_floor_silver_64_b_0_0", "x": -79, "color": 16777215, "y": 255, "z": 71.788064989959 }, { "name": "pixel_floor_silver_64_b_0_0", "x": -15, "color": 16777215, "y": 287, "z": 70.37389759669 }, { "name": "pixel_floor_silver_64_b_0_0", "x": -79, "color": 16777215, "y": 319, "z": 68.959745564013 }, { "name": "pixel_floor_silver_64_a_0_0", "x": -79, "color": 16777215, "y": 256, "z": 36.433433037376 }, { "name": "pixel_floor_silver_64_a_0_0", "x": -15, "color": 16777215, "y": 288, "z": 35.019265644107 }, { "name": "cubie_shelf_1_b_64_a_0_0", "x": 278, "color": 16777215, "y": 130, "z": 3.8992843786696 }, { "name": "cubie_shelf_1_b_64_b_0_4", "x": 284, "color": 16777215, "y": 149, "z": 3.8985772719254 }, { "name": "cubie_shelf_2_b_64_a_0_0", "x": 310, "color": 16777215, "y": 146, "z": 3.1922083617946 }, { "name": "cubie_shelf_2_b_64_b_0_1", "x": 316, "color": 16777215, "y": 170, "z": 3.1915012550504 }, { "name": "usva_shelf_64_sd_0_0", "color": 16777215, "y": 240, "z": 1.7780717322081, "x": 272, "alpha": 48 }, { "name": "usva_shelf_64_b_0_1", "x": 272, "color": 16777215, "y": 199, "z": 1.7780717321711 }, { "name": "h_std_sd_1_0_0", "color": 16777215, "y": 249, "z": 1.3638735741835, "x": 192, "alpha": 50 }, { "name": "pura_mdl2_64_d_0_0", "x": 208, "color": 16777215, "y": 192, "z": 1.0794425525807 }, { "name": "pixel_bed_blue_64_sd_0_0", "flipH": true, "y": 276, "z": 1.0780534903108, "x": -103, "alpha": 48, "color": 16777215 }, { "name": "pura_mdl2_64_a_0_0", "x": 208, "color": 16777215, "y": 219, "z": 1.0780283389074 }, { "name": "pura_mdl2_64_b_0_0", "x": 213, "color": 6204152, "y": 211, "z": 1.0773212321632 }, { "name": "usva_shelf_64_a_0_1", "x": 273, "color": 16777215, "y": 200, "z": 1.0709649509475 }, { "name": "pura_mdl2_64_c_0_0", "x": 214, "color": 6204152, "y": 205, "z": 1.0483298541715 }, { "name": "pura_mdl3_64_a_0_0", "x": 240, "color": 16777215, "y": 235, "z": 0.38226603171534 }, { "name": "pura_mdl3_64_b_0_0", "x": 239, "color": 6204152, "y": 224, "z": 0.38085181818997 }, { "name": "avatar_0", "x": 164, "color": 16777215, "y": 142, "z": 0.35287357414649 }, { "name": "h_std_bd_1_3_0", "x": 197, "color": 16763800, "y": 206, "z": 0.35287357414649 }, { "name": "h_std_sh_2044_3_0", "x": 199, "color": 12971494, "y": 254, "z": 0.35277357414649 }, { "name": "h_std_sh_2045_3_0", "x": 200, "color": 14540253, "y": 255, "z": 0.35267357414649 }, { "name": "h_std_lg_2129_3_0", "x": 198, "y": 235, "z": 0.35257357414649 }, { "name": "h_std_lg_2130_3_0", "x": 199, "color": 7572334, "y": 239, "z": 0.35247357414649 }, { "name": "h_std_ch_2126_3_0", "x": 202, "y": 208, "z": 0.35237357414649 }, { "name": "h_std_ch_2127_3_0", "x": 207, "color": 1973790, "y": 216, "z": 0.35227357414649 }, { "name": "h_std_ch_2128_3_0", "x": 198, "color": 13016945, "y": 206, "z": 0.35217357414649 }, { "name": "h_std_hd_3_3_0", "x": 196, "color": 16763800, "y": 182, "z": 0.35207357414649 }, { "name": "h_std_fc_1_3_0", "x": 206, "color": 16763800, "y": 204, "z": 0.35197357414649 }, { "name": "h_std_ey_1_3_0", "x": 202, "y": 198, "z": 0.35187357414649 }, { "name": "h_std_hr_2268_3_0", "x": 194, "color": 7816226, "y": 171, "z": 0.35177357414649 }, { "name": "h_std_hrb_2268_3_0", "x": 194, "color": 7816226, "y": 171, "z": 0.35167357414649 }, { "name": "h_std_lh_1_3_0", "x": 218, "color": 16763800, "y": 208, "z": 0.35157357414649 }, { "name": "h_std_ls_2128_3_0", "x": 218, "color": 13016945, "y": 206, "z": 0.35147357414649 }, { "name": "h_std_rh_1_3_0", "x": 193, "color": 16763800, "y": 208, "z": 0.35137357414649 }, { "name": "h_std_rs_2128_3_0", "x": 193, "color": 13016945, "y": 206, "z": 0.35127357414649 }, { "name": "pura_mdl3_64_c_0_0", "x": 240, "color": 6204152, "y": 218, "z": 0.34408226560527 }, { "name": "pura_mdl1_64_a_0_0", "x": 272, "color": 16777215, "y": 251, "z": -0.33612369450966 }, { "name": "pura_mdl1_64_b_0_0", "x": 271, "color": 6204152, "y": 240, "z": -0.33683080125385 }, { "name": "pixel_bed_blue_64_b_0_0", "color": 16777215, "y": 240, "z": -0.33686717895446, "x": -109, "flipH": true }, { "name": "pura_mdl1_64_c_0_0", "x": 272, "color": 6204152, "y": 234, "z": -0.3658221792455 }, { "name": "pura_mdl1_64_d_0_0", "x": 300, "color": 16777215, "y": 238, "z": -0.36652928598968 }, { "name": "pixel_bed_blue_64_c_0_0", "color": 16777215, "y": 274, "z": -0.69112767629192, "x": -78, "flipH": true }, { "name": "pixel_bed_blue_64_d_0_0", "color": 16777215, "y": 290, "z": -1.3989415642227, "x": -46, "flipH": true }, { "name": "chair_polyfon_64_a_2_0", "color": 16777215, "y": 313, "z": -3.1431911580272, "x": 171, "flipH": true } ], "modifiers": [], "filters": [], "roomid": 3, "status": 108, "timestamp": 1436635320404, "checksum": 6097 }', true);
+    }
+
+    /**
+     * create default folders...
+     * @author Claudio Santoro
+     *
+     * @return string|void
+     */
+    private function create_folders()
+    {
+        /* check existence of masks folder */
+        if (!is_dir($this->settings['folder-settings']['masks-folder']))
+            mkdir($this->settings['folder-settings']['masks-folder']);
+
+        /* check existence of sprites folder */
+        if (!is_dir($this->settings['folder-settings']['sprites-folder']))
+            mkdir($this->settings['folder-settings']['sprites-folder']);
+
+        /* check existence of thumbnail output folder */
+        if (!is_dir($this->settings['thumbnail-settings']['path-settings']['server-camera']))
+            mkdir($this->settings['thumbnail-settings']['path-settings']['server-camera']);
+
+        /* check existence of image output folder */
+        if (!is_dir($this->settings['image-settings']['path-settings']['server-camera']))
+            mkdir($this->settings['image-settings']['path-settings']['server-camera']);
+
+        /* show success message */
+        return $this->just_show('Yes. Folders Created Successfully..', true);
     }
 
     /**
      * set the user defined variables of the CameraGD script.
      *
+     * @param array $settings
      * @param string $image_url
      * @param string $image_small_url
-     * @param int $image_w
-     * @param int $image_h
-     * @param int $image_s_w
-     * @param int $image_s_h
      */
-    private function set_variables($image_url = '', $image_small_url = '', $image_w = 320, $image_h = 320, $image_s_w = 100, $image_s_h = 100)
+    private function set_variables($settings = [], $image_url = '', $image_small_url = '')
     {
         /* let's do it now! */
-        $image_url       = str_replace('[IMAGE_URL]', ($this->json['roomid'] . '-' . $this->json['timestamp']), $image_url);
-        $image_small_url = str_replace('[IMAGE_URL]', ($this->json['roomid'] . '-' . $this->json['timestamp']), $image_small_url);
+        $image_url       = ((($settings['image-settings']['path-settings']['image-name']) == 'default') ? str_replace('[IMAGE_URL]', ($this->json['roomid'] . '-' . $this->json['timestamp']), $image_url) : (str_replace('[IMAGE_URL]', ($settings['image-settings']['path-settings']['image-name']), $image_url)));
+        $image_small_url = ((($settings['thumbnail-settings']['path-settings']['image-name']) == 'default') ? str_replace('[IMAGE_URL]', ($this->json['roomid'] . '-' . $this->json['timestamp']), $image_small_url) : (str_replace('[IMAGE_URL]', ($settings['thumbnail-settings']['path-settings']['image-name']), $image_small_url)));
 
         /* define folder-path variables */
         defined('ROOT_DIR') || define('ROOT_DIR', __DIR__);
 
         /* camera main image sizes */
-        defined('IMAGE_W') || define('IMAGE_W', $image_w);
-        defined('IMAGE_H') || define('IMAGE_H', $image_h);
+        defined('IMAGE_W') || define('IMAGE_W', ($settings['image-settings']['size-settings']['image-width']));
+        defined('IMAGE_H') || define('IMAGE_H', ($settings['image-settings']['size-settings']['image-height']));
 
         /* camera thumbnail image sizes */
-        defined('IMAGE_S_W') || define('IMAGE_S_W', $image_s_w);
-        defined('IMAGE_S_H') || define('IMAGE_S_H', $image_s_h);
+        defined('IMAGE_S_W') || define('IMAGE_S_W', ($settings['thumbnail-settings']['size-settings']['image-width']));
+        defined('IMAGE_S_H') || define('IMAGE_S_H', ($settings['thumbnail-settings']['size-settings']['image-height']));
 
-        /* server-camera root dir (output for generated images) */
-        defined('SERVER_CAMERA') || define('SERVER_CAMERA', 'servercamera');
+        /* server-camera image root dir (output for generated images) */
+        defined('SERVER_CAMERA') || define('SERVER_CAMERA', ($settings['image-settings']['path-settings']['server-camera']));
 
-        /* set requester data */
-        $client  = $_SERVER['HTTP_CLIENT_IP'];
-        $forward = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        $remote  = $_SERVER['REMOTE_ADDR'];
+        /* server-camera thumbnail root dir (output for generated images) */
+        defined('SERVER_CAMERA_S') || define('SERVER_CAMERA_S', ($settings['thumbnail-settings']['path-settings']['server-camera']));
 
-        /* validate hotel requester country */
-        defined('HOTEL_COUNTRY') || define('HOTEL_COUNTRY', $this->visitor_country($client, $forward, $remote));
+        /* validate hotel requester image country */
+        defined('HOTEL_COUNTRY') || define('HOTEL_COUNTRY', ((($settings['image-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country(($_SERVER['HTTP_CLIENT_IP']), ($_SERVER['HTTP_X_FORWARDED_FOR']), ($_SERVER['REMOTE_ADDR'])) : ($settings['image-settings']['path-settings']['hotel-country'])));
 
-        $image_url       = str_replace('[SERVER_CAMERA]', SERVER_CAMERA, $image_url);
-        $image_small_url = str_replace('[SERVER_CAMERA]', SERVER_CAMERA, $image_small_url);
+        /* validate hotel requester thumbnail country */
+        defined('HOTEL_COUNTRY_S') || define('HOTEL_COUNTRY_S', ((($settings['thumbnail-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country(($_SERVER['HTTP_CLIENT_IP']), ($_SERVER['HTTP_X_FORWARDED_FOR']), ($_SERVER['REMOTE_ADDR'])) : ($settings['thumbnail-settings']['path-settings']['hotel-country'])));
 
-        $image_url       = str_replace('[HOTEL_COUNTRY]', HOTEL_COUNTRY, $image_url);
-        $image_small_url = str_replace('[HOTEL_COUNTRY]', HOTEL_COUNTRY, $image_small_url);
+        /* do the urls for main image */
+        $image_url = str_replace('[SERVER_CAMERA]', SERVER_CAMERA, $image_url);
+        $image_url = str_replace('[HOTEL_COUNTRY]', HOTEL_COUNTRY, $image_url);
+
+        /* do the urls for thumbnail image */
+        $image_small_url = str_replace('[SERVER_CAMERA_S]', SERVER_CAMERA_S, $image_small_url);
+        $image_small_url = str_replace('[HOTEL_COUNTRY_S]', HOTEL_COUNTRY_S, $image_small_url);
 
         /**
          * you need habbo avatars, furniture, effects, and pets sprites extracted manually from all SWF's.
@@ -122,8 +225,8 @@ final class CameraGD
          * @author Claudio Santoro
          * @package habbo-asset-extractor
          */
-        defined('SPRITES_ROOT') || define('SPRITES_ROOT', ROOT_DIR . '/sprites/');
-        defined('MASKS_ROOT') || define('MASKS_ROOT', ROOT_DIR . '/masks/');
+        defined('SPRITES_ROOT') || define('SPRITES_ROOT', ROOT_DIR . ($settings['folder-settings']['sprites-folder']));
+        defined('MASKS_ROOT') || define('MASKS_ROOT', ROOT_DIR . ($settings['folder-settings']['masks-folder']));
 
         /* define image url-variables */
 
@@ -160,8 +263,10 @@ final class CameraGD
     /**
      * let it go
      * start all tha xit
+     * @param bool $show_image
+     * @return mixed
      */
-    private function let_it_go()
+    private function let_it_go($show_image = false)
     {
         /* let allocate evrathing */
         $this->image = imagecreatetruecolor(IMAGE_W, IMAGE_H);
@@ -176,10 +281,15 @@ final class CameraGD
         $this->smaller_image();
 
         /* save the image */
-        $this->image_create();
+        $this->image_create($show_image);
 
         /* i must give back the url of main image because CLIENT need's */
-        return IMAGE_URL;
+        if (!$show_image)
+            return IMAGE_URL;
+
+        /* if need to show image */
+        header('Content-Type: image/png');
+        return $this->image;
     }
 
     /**
@@ -455,12 +565,28 @@ final class CameraGD
     }
 
     /**
+     * let's just show and die, okay?
+     * @author Claudio Santoro
+     * @todo: make this better
+     *
+     * @param string $message
+     * @param bool|false $must_die
+     * @return string|void
+     */
+    private function just_show($message = '', $must_die = false)
+    {
+        $r = '<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet"><br><br><br><div class="row"><div class="col-sm-2"></div><div class="col-sm-8"><div class="alert alert-success"><h4><>OK!</h4><b> The system write a special message for you: :</b><br><hr><blockquote><h5>' . $message . '</h5></blockquote></div></div></div>';
+        return (($must_die) ? die($r) : $r);
+    }
+
+    /**
      * this method save in a physical link, the allocated memory from the image
      * @uses image/png compression
      * @see https://en.wikipedia.org/wiki/Portable_Network_Graphics
      * also this method erases the allocated memory
+     * @param bool $show_image
      */
-    private function image_create()
+    private function image_create($show_image = false)
     {
         /* check if the variables are really valid resources.. otherwise try to create from string.. */
         $this->image       = (((!is_resource($this->image)) && (is_string($this->image))) ? (string)imagecreatefromstring($this->image) : $this->image);
@@ -470,7 +596,7 @@ final class CameraGD
         imagesavealpha($this->image, true);
 
         /* save main camera image */
-        imagepng($this->image, IMAGE_URL);
+        if (!$show_image) imagepng($this->image, IMAGE_URL); else imagepng($this->image);
 
         /* save the image thumbnail */
         imagepng($this->image_small, IMAGE_SMALL_URL);
@@ -503,5 +629,42 @@ final class CameraGD
  * [SERVER_CAMERA], [HOTEL_COUNTRY], [IMAGE_URL]
  */
 
-new CameraGD(('[SERVER_CAMERA]/purchased/[HOTEL_COUNTRY]/[IMAGE_URL].png'), ('[SERVER_CAMERA]/purchased/[HOTEL_COUNTRY]/[IMAGE_URL].png'));
+$settings = [
+    'white-list' => [
+        '127.0.0.1',
+        'localhost',
+        '0.0.0.0',
+        'LOCALHOST'
+    ],
+    'image-settings' => [
+        'size-settings' => [
+            'image-width' => 320,
+            'image-height' => 320
+        ],
+        'path-settings' => [
+            'server-camera' => 'servercamera', // base folder
+            'hotel-country' => 'default', // default will use get country code. you can set manually a country code.
+            'image-name' => 'default', // using default will use the json-data for name, recommended use default.
+            'image-url' => '[SERVER_CAMERA]/purchased/[HOTEL_COUNTRY]/[IMAGE_URL].png'
+        ]
+    ],
+    'thumbnail-settings' => [
+        'size-settings' => [
+            'image-width' => 100,
+            'image-height' => 100
+        ],
+        'path-settings' => [
+            'server-camera' => 'servercamera', // base folder
+            'hotel-country' => 'default', // default will use get country code. you can set manually a country code.
+            'image-name' => 'default', // using default will use the json-data for name, recommended use default.
+            'image-url' => '[SERVER_CAMERA_S]/purchased/[HOTEL_COUNTRY_S]/[IMAGE_URL_S].png'
+        ]
+    ],
+    'folder-settings' => [
+        'masks-folder' => 'masks',
+        'sprites-folder' => 'sprites'
+    ]
+];
+
+new CameraGD($settings);
 exit;
