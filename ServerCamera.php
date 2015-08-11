@@ -77,7 +77,7 @@ final class CameraGD
             case 'install':
                 return $this->actions('install', true);
             case 'test':
-                return $this->actions('test', false);
+                return $this->actions('test', true);
             case 'run':
             default:
                 return $this->actions('run', false);
