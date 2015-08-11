@@ -54,7 +54,7 @@ final class CameraGD
     function __construct($settings = [])
     {
         /* the header */
-        header('Content-Type: image/png');
+        //header('Content-Type: image/png');
 
         /* set settings variables */
         $this->settings = $settings;
@@ -95,7 +95,7 @@ final class CameraGD
     private function do_it($json = '', $show_image = false)
     {
         /* let's get php input */
-        if (is_null($this->json = json_decode($json, true)))
+        if (empty($this->json = json_decode($json, true)))
             return $this->just_die('500', 'the php input, isn\'t a valid jSON data!', true);
 
         /* other prob y? */
@@ -621,8 +621,8 @@ final class CameraGD
     function __destruct()
     {
         /* because we love destroy memory */
-        imagedestroy($this->image_small);
-        imagedestroy($this->image);
+        @imagedestroy($this->image_small);
+        @imagedestroy($this->image);
     }
 }
 
