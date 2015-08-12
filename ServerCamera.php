@@ -54,7 +54,7 @@ final class CameraGD
     function __construct($settings = [])
     {
         /* the header */
-        //header('Content-Type: image/png');
+        header('Content-Type: image/png');
 
         /* set settings variables */
         $this->settings = $settings;
