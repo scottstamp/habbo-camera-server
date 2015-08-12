@@ -53,11 +53,11 @@ final class CameraGD
      */
     function __construct($settings = [])
     {
-        /* the header */
-        header('Content-Type: image/png');
-
         /* set settings variables */
         $this->settings = $settings;
+		
+		/* the header */
+		if(isset($_GET['test'])) header('Content-Type: image/png'); else header('Content-Type:text/html; charset=UTF-8');
 
         /* do an action */
         echo $this->trace_routers();
@@ -286,11 +286,9 @@ final class CameraGD
         $this->image_create($show_image);
 
         /* i must give back the url of main image because CLIENT need's */
-        if ($show_image)
-            return $this->image;
+        if ($show_image) return $this->image;
 
         /* if don't need to show image */
-        header('Content-Type:text/html; charset=UTF-8');
         return IMAGE_URL;
     }
 
