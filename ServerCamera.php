@@ -29,6 +29,18 @@
     GNU General Public License for more details.
 */
 
+/*
+ * Attention!
+ * Is Required PhP 5.4x or Higher
+ * Is Required Built-In GD Library
+ * Is Recommended Safe Thread PhP Version
+ * Is Recommended don't give CHMOD 777X for that file.
+ * Is Recommended create a special user for that File.
+ * Is Recommended Put Adobe's X-CORS Polciy. Read in README.md
+ * Any Dudes? Create Issues
+ * And, if you are from Sulake.. Hello!
+ */
+
 /**
  * Class CameraGD
  * @package AzureCamera
@@ -55,9 +67,9 @@ final class CameraGD
     {
         /* set settings variables */
         $this->settings = $settings;
-		
-		/* the header */
-		if(isset($_GET['test'])) header('Content-Type: image/png'); else header('Content-Type:text/html; charset=UTF-8');
+
+        /* the header */
+        if (isset($_GET['test'])) header('Content-Type: image/png'); else header('Content-Type:text/html; charset=UTF-8');
 
         /* do an action */
         echo $this->trace_routers();
@@ -213,31 +225,22 @@ final class CameraGD
         /* validate hotel requester thumbnail country */
         defined('HOTEL_COUNTRY_S') || define('HOTEL_COUNTRY_S', ((($settings['thumbnail-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : strtolower($settings['thumbnail-settings']['path-settings']['hotel-country'])));
 
-        /* do the urls for main image */
-        $image_url = str_replace('[SERVER_CAMERA]', SERVER_CAMERA, $image_url);
-        $image_url = str_replace('[HOTEL_COUNTRY]', HOTEL_COUNTRY, $image_url);
-
-        /* do the urls for thumbnail image */
-        $image_small_url = str_replace('[SERVER_CAMERA_S]', SERVER_CAMERA_S, $image_small_url);
-        $image_small_url = str_replace('[HOTEL_COUNTRY_S]', HOTEL_COUNTRY_S, $image_small_url);
-
         /**
-         * you need habbo avatars, furniture, effects, and pets sprites extracted manually from all SWF's.
+         * you need Habbo avatars, furniture, effects, and pets sprites extracted manually from all SWF's.
          * you can get, extract all seeing the habbo-asset-extractor repository.
          * @link http://github.com/sant0ro/habbo-asset-extractor/
+         *
          * @author Claudio Santoro
          * @package habbo-asset-extractor
          */
         defined('SPRITES_ROOT') || define('SPRITES_ROOT', ROOT_DIR . ($settings['folder-settings']['sprites-folder']));
         defined('MASKS_ROOT') || define('MASKS_ROOT', ROOT_DIR . ($settings['folder-settings']['masks-folder']));
 
-        /* define image url-variables */
-
         /* camera main image url */
-        defined('IMAGE_URL') || define('IMAGE_URL', $image_url);
+        defined('IMAGE_URL') || define('IMAGE_URL', str_replace('[SERVER_CAMERA]', SERVER_CAMERA, str_replace('[HOTEL_COUNTRY]', HOTEL_COUNTRY, $image_url)));
 
         /* camera thumbnail image url */
-        defined('IMAGE_SMALL_URL') || define('IMAGE_SMALL_URL', $image_small_url);
+        defined('IMAGE_SMALL_URL') || define('IMAGE_SMALL_URL', str_replace('[SERVER_CAMERA_S]', SERVER_CAMERA_S, str_replace('[HOTEL_COUNTRY_S]', HOTEL_COUNTRY_S, $image_small_url)));
     }
 
     /**
@@ -250,27 +253,28 @@ final class CameraGD
      * @param string $client HTTP_CLIENT_IP
      * @param string $forward HTTP_X_FORWARDED_FOR
      * @param string $remote REMOTE_ADDR
-     * @return string
+     * @return string Country Code
      */
     private function visitor_country($client = '', $forward = '', $remote = '')
     {
         /* filter ip data, check if is valid, and get geoplugin ip data */
-        $ip      = ((filter_var($client, FILTER_VALIDATE_IP)) ? $client : ((filter_var($forward, FILTER_VALIDATE_IP)) ? $forward : $remote));
-        $ip_data = json_decode(file_get_contents("http://www.geoplugin.net/json.gp?ip=$ip"));
+        $ip_data = json_decode(file_get_contents('http://www.geoplugin.net/json.gp?ip=' . ((filter_var($client, FILTER_VALIDATE_IP)) ? $client : ((filter_var($forward, FILTER_VALIDATE_IP)) ? $forward : $remote))));
 
         /* return country code */
-        return strtolower((($ip_data && $ip_data->geoplugin_countryCode != null) ? $ip_data->geoplugin_countryCode : 'US'));
+        return strtolower(((($ip_data) && ($ip_data->geoplugin_countryCode != null)) ? ($ip_data->geoplugin_countryCode) : 'us'));
     }
 
     /**
      * let it go
-     * start all tha xit
+     * allocate image and call all image voids
+     * @author Claudio Santoro
+     *
      * @param bool $show_image
      * @return mixed
      */
     private function let_it_go($show_image = false)
     {
-        /* let allocate evrathing */
+        /* let allocate everything */
         $this->image = imagecreatetruecolor(IMAGE_W, IMAGE_H);
 
         /* render all jSON planes */
@@ -346,17 +350,18 @@ final class CameraGD
      * An Old but Needed function for the Actual Days of PhP
      * @source http://forums.devnetwork.net/viewtopic.php?f=1&t=103330#p553333
      * @author RedMonkey
-     * Edited by AzureTeam
+     * @editor Claudio Santoro
      *
-     * @param $dst
-     * @param $src
-     * @param $dst_x
-     * @param $dst_y
-     * @param $src_x
-     * @param $src_y
-     * @param $w
-     * @param $h
-     * @param $pct
+     * @param resource $dst Destination Allocated Image
+     * @param resource $src Source Allocated Image
+     * @param int $dst_x Destination Position X
+     * @param int $dst_y Destination Position Y
+     * @param int $src_x Source Position X
+     * @param int $src_y Source Position Y
+     * @param int $w Width
+     * @param int $h Height
+     * @param int $pct Alpha Percent
+     * @return null
      */
     private function image_copy_merge_with_alpha($dst, $src, $dst_x = 0, $dst_y = 0, $src_x = 0, $src_y = 0, $w = 0, $h = 0, $pct = 100)
     {
@@ -425,13 +430,13 @@ final class CameraGD
 
             /* cleanup, free memory */
             imagedestroy($src_copy);
-            return;
+            return null;
         endif;
 
         /* still here? no opacity adjustment required so pass straight through to */
         /* @method /imagecopy rather than @method /imagecopymerge to retain alpha channels          */
         imagecopy($dst, $src, $dst_x, $dst_y, $src_x, $src_y, $w, $h);
-        return;
+        return null;
     }
 
     /**
@@ -457,7 +462,12 @@ final class CameraGD
             array_push($polygon_array, $plane['cornerPoints'][0]['x'], $plane['cornerPoints'][0]['y'], $plane['cornerPoints'][1]['x'], $plane['cornerPoints'][1]['y'], $plane['cornerPoints'][3]['x'], $plane['cornerPoints'][3]['y'], $plane['cornerPoints'][2]['x'], $plane['cornerPoints'][2]['y']);
 
             /* is also a pokemon name. */
-            imagefilledpolygon($this->image, $polygon_array, count($polygon_array) / 2, $color);
+            /**
+             * the "(count($polygon_array) / 2)" is because jSON doesn't say the Y position of the Door Asset...
+             * Soo that math that i did was really bad. / by 2, i will search a better way to combinate the positions..
+             * @todo Fix the Door Y Position
+             */
+            imagefilledpolygon($this->image, $polygon_array, (count($polygon_array) / 2), $color);
 
             /* get tex_cols of every plane */
             if (array_key_exists('texCols', $plane)):
@@ -469,7 +479,7 @@ final class CameraGD
                     if ((isset($tex_col['flipH'])) && (stripos('_flipH', $tex_col['assetNames'][0] !== false))) $mask['assetNames'] = str_ireplace('_flipH', '', ($tex_col['assetNames'][0]));
 
                     /* let's create a image.. */
-                    $tex_cols_asset = imagecreatefrompng(MASKS_ROOT . $tex_col['assetNames'][0] . '.png');
+                    if (is_bool($tex_cols_asset = @imagecreatefrompng(MASKS_ROOT . $tex_col['assetNames'][0] . '.png'))) continue;
 
                     /* soo flip, soo flip, flip. */
                     if (isset($mask['flipH']) && ($mask['flipH'] == 'true')) imageflip($tex_cols_asset, IMG_FLIP_HORIZONTAL);
@@ -496,7 +506,7 @@ final class CameraGD
                     if ((isset($mask['flipH'])) && (stripos('_flipH', $mask['name'] !== false))) $mask['name'] = str_ireplace('_flipH', '', ($mask['name']));
 
                     /* dingle bells.. */
-                    $mask_asset = imagecreatefrompng(MASKS_ROOT . $mask['name'] . '.png');
+                    if (is_bool($mask_asset = @imagecreatefrompng(MASKS_ROOT . $mask['name'] . '.png'))) continue;
 
                     /* soo flip, soo flip, flip. */
                     if (isset($mask['flipH']) && ($mask['flipH'] == 'true')) imageflip($mask_asset, IMG_FLIP_HORIZONTAL);
@@ -534,7 +544,7 @@ final class CameraGD
             /* soo flip, soo flip, flip. */
             if (isset($sprite['flipH']) && ($sprite['flipH'] == 'true')) imageflip($tha_sprite, IMG_FLIP_HORIZONTAL);
 
-            /* really, why Habbo use bad TrueColor Codes? */
+            /* @author Macklebee... really, why Habbo use bad TrueColor Codes? */
             if (array_key_exists('color', $sprite) && ($sprite['color'] != '16777215')):
                 $color_rgb = $this->hex_to_rgb(dechex($sprite['color']));
                 $this->image_recolor($tha_sprite, $color_rgb[0], $color_rgb[1], $color_rgb[2]);
@@ -666,5 +676,6 @@ $settings = [
     ]
 ];
 
+/* let sing a song */
 new CameraGD($settings);
 exit;
