@@ -58,6 +58,7 @@ GNU General Public License for more details.
 #### Security
 The Script must be only Requisited by Habbo Emulators. (Following the Habbo Camera API) For that, you Need Have
 an Adobe Flash Crosddomain Policy (X-CORS) file "crossdomain.xml". Without that any prejudicial user can execute the script.
+[Read More Here](http://www.adobe.com/devnet/articles/crossdomain_policy_file_spec.html)
 
 #### Warning
 > the Installation Procedure and Test Procedure only will work in localhost, or in a ip from the white-list Array.
