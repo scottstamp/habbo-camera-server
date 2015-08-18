@@ -29,6 +29,15 @@
     GNU General Public License for more details.
 */
 
+/**
+ * Few Words:
+ *
+ *      "The ultimate tragedy is not the oppression and cruelty by the bad people but the silence over that by the good people."
+ * - Martin Luther King
+ *
+ * Read more at http://www.brainyquote.com/quotes/authors/m/martin_luther_king_jr.html#zmow4kbu42Dpt9yH.99
+ */
+
 /*
  * Attention!
  * Is Required PhP 5.4x or Higher
@@ -68,7 +77,7 @@ final class CameraGD
         /* set settings variables */
         $this->settings = $settings;
 
-        /* the header */
+        /* the header, "i know that is really bad this following line.." */
         if (isset($_GET['test'])) header('Content-Type: image/png'); else header('Content-Type:text/html; charset=UTF-8');
 
         /* do an action */
@@ -76,22 +85,75 @@ final class CameraGD
     }
 
     /**
+     * # string manipulation functions #
+     */
+
+    /**
+     * escape text to a safe string.
+     *
+     * @param array|mixed|string $text_string
+     * @return array|mixed|string
+     */
+    static function escape_text($text_string)
+    {
+        /* if is array, return the self method for each array value */
+        if (is_array($text_string))
+            return array_map(__METHOD__, $text_string);
+        /* if isn't empty and if is a valid string.. */
+        if (!empty($text_string) && is_string($text_string))
+            return str_replace(['\\', "\0", "\n", "\r", "'", '"', "\x1a"], ['\\\\', '\\0', '\\n', '\\r', "\\'", '\\"', '\\Z'], $text_string);
+        /* if not return something that can be something.. */
+        return $text_string;
+    }
+
+    /**
+     * # magic functions #
+     */
+
+    /**
+     * set a specific variable to a specific value
+     *
+     * @param string $variable
+     * @param string $value
+     */
+    function __set($variable = '', $value = '')
+    {
+        $this->$variable = self::escape_text($value);
+    }
+
+    /**
+     * return a variable, if not exists, return null
+     *
+     * @param string $variable
+     * @return array|mixed|null|string
+     */
+    function __get($variable = '')
+    {
+        return ((isset($this->$variable)) ? self::escape_text($this->$variable) : null);
+    }
+
+    /**
+     * # routing functions #
+     */
+
+    /**
      * trace routers and do the actions
      * @author Claudio Santoro
      * @todo Improve this
+     * @observation That is a Simple Router System.
      *
      * @return mixed
      */
     private function trace_routers()
     {
         /* trace routers by get */
-        switch ($_SERVER['QUERY_STRING']):
+        switch (((isset($_SERVER['QUERY_STRING'])) ? $_SERVER['QUERY_STRING'] : 'run')):
             case 'install':
                 return $this->actions('install', true);
             case 'test':
                 return $this->actions('test', true);
-            case 'run':
             default:
+            case 'run':
                 return $this->actions('run', false);
         endswitch;
     }
@@ -170,23 +232,44 @@ final class CameraGD
     private function create_folders()
     {
         /* check existence of masks folder */
-        if (!is_dir($this->settings['folder-settings']['masks-folder']))
-            mkdir($this->settings['folder-settings']['masks-folder']);
+        self::create_folder($this->settings['folder-settings']['masks-folder']);
 
         /* check existence of sprites folder */
-        if (!is_dir($this->settings['folder-settings']['sprites-folder']))
-            mkdir($this->settings['folder-settings']['sprites-folder']);
+        self::create_folder($this->settings['folder-settings']['sprites-folder']);
 
         /* check existence of thumbnail output folder */
-        if (!is_dir($this->settings['thumbnail-settings']['path-settings']['server-camera']))
-            mkdir($this->settings['thumbnail-settings']['path-settings']['server-camera']);
+        self::create_folder($this->settings['thumbnail-settings']['path-settings']['server-camera']);
 
         /* check existence of image output folder */
-        if (!is_dir($this->settings['image-settings']['path-settings']['server-camera']))
-            mkdir($this->settings['image-settings']['path-settings']['server-camera']);
+        self::create_folder($this->settings['image-settings']['path-settings']['server-camera']);
 
         /* show success message */
         return $this->just_show('Yes. Folders Created Successfully..', true);
+    }
+
+    /**
+     * create folder first checking if everything is valid
+     *
+     * @param string $folder_name
+     */
+    static private function create_folder($folder_name = '')
+    {
+        /** create a secure folder (or not kidding) */
+        if ((!empty($folder_name) && (!is_dir($folder_name))))
+            mkdir($folder_name, 0755);
+    }
+
+    /**
+     * define run-time global variables
+     *
+     * @param string $name
+     * @param string $value
+     */
+    static private function set_variable($name = '', $value = '')
+    {
+        /* must check if is a valid string yeah? */
+        if (((!empty($name)) && (!empty($value))) && ((is_string($name) && (is_string($value)))))
+            defined($name) || define($name, $value);
     }
 
     /**
@@ -200,30 +283,30 @@ final class CameraGD
     {
         /* let's do it now! */
         $image_url       = ((($settings['image-settings']['path-settings']['image-name']) == 'default') ? str_replace('[IMAGE_URL]', ($this->json['roomid'] . '-' . $this->json['timestamp']), $image_url) : (str_replace('[IMAGE_URL]', ($settings['image-settings']['path-settings']['image-name']), $image_url)));
-        $image_small_url = ((($settings['thumbnail-settings']['path-settings']['image-name']) == 'default') ? str_replace('[IMAGE_URL]', ($this->json['roomid'] . '-' . $this->json['timestamp']), $image_small_url) : (str_replace('[IMAGE_URL]', ($settings['thumbnail-settings']['path-settings']['image-name']), $image_small_url)));
+        $image_small_url = ((($settings['thumbnail-settings']['path-settings']['image-name']) == 'default') ? str_replace('[IMAGE_SMALL_URL]', ($this->json['roomid'] . '-' . $this->json['timestamp'] . '_small'), $image_small_url) : (str_replace('[IMAGE_SMALL_URL]', ($settings['thumbnail-settings']['path-settings']['image-name']), $image_small_url)));
 
         /* define folder-path variables */
-        defined('ROOT_DIR') || define('ROOT_DIR', __DIR__);
+        self::set_variable('ROOT_DIR', __DIR__);
 
         /* camera main image sizes */
-        defined('IMAGE_W') || define('IMAGE_W', ($settings['image-settings']['size-settings']['image-width']));
-        defined('IMAGE_H') || define('IMAGE_H', ($settings['image-settings']['size-settings']['image-height']));
+        self::set_variable('IMAGE_W', ($settings['image-settings']['size-settings']['image-width']));
+        self::set_variable('IMAGE_H', ($settings['image-settings']['size-settings']['image-height']));
 
         /* camera thumbnail image sizes */
-        defined('IMAGE_S_W') || define('IMAGE_S_W', ($settings['thumbnail-settings']['size-settings']['image-width']));
-        defined('IMAGE_S_H') || define('IMAGE_S_H', ($settings['thumbnail-settings']['size-settings']['image-height']));
+        self::set_variable('IMAGE_S_W', ($settings['thumbnail-settings']['size-settings']['image-width']));
+        self::set_variable('IMAGE_S_H', ($settings['thumbnail-settings']['size-settings']['image-height']));
 
         /* server-camera image root dir (output for generated images) */
-        defined('SERVER_CAMERA') || define('SERVER_CAMERA', ($settings['image-settings']['path-settings']['server-camera']));
+        self::set_variable('SERVER_CAMERA', ($settings['image-settings']['path-settings']['server-camera']));
 
         /* server-camera thumbnail root dir (output for generated images) */
-        defined('SERVER_CAMERA_S') || define('SERVER_CAMERA_S', ($settings['thumbnail-settings']['path-settings']['server-camera']));
+        self::set_variable('SERVER_CAMERA_S', ($settings['thumbnail-settings']['path-settings']['server-camera']));
 
         /* validate hotel requester image country */
-        defined('HOTEL_COUNTRY') || define('HOTEL_COUNTRY', ((($settings['image-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : strtolower($settings['image-settings']['path-settings']['hotel-country'])));
+        self::set_variable('HOTEL_COUNTRY', ((($settings['image-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : strtolower($settings['image-settings']['path-settings']['hotel-country'])));
 
         /* validate hotel requester thumbnail country */
-        defined('HOTEL_COUNTRY_S') || define('HOTEL_COUNTRY_S', ((($settings['thumbnail-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : strtolower($settings['thumbnail-settings']['path-settings']['hotel-country'])));
+        self::set_variable('HOTEL_COUNTRY_S', ((($settings['thumbnail-settings']['path-settings']['hotel-country']) == 'default') ? $this->visitor_country((@$_SERVER['HTTP_CLIENT_IP']), (@$_SERVER['HTTP_X_FORWARDED_FOR']), (@$_SERVER['REMOTE_ADDR'])) : strtolower($settings['thumbnail-settings']['path-settings']['hotel-country'])));
 
         /**
          * you need Habbo avatars, furniture, effects, and pets sprites extracted manually from all SWF's.
@@ -233,14 +316,14 @@ final class CameraGD
          * @author Claudio Santoro
          * @package habbo-asset-extractor
          */
-        defined('SPRITES_ROOT') || define('SPRITES_ROOT', ROOT_DIR . ($settings['folder-settings']['sprites-folder']));
-        defined('MASKS_ROOT') || define('MASKS_ROOT', ROOT_DIR . ($settings['folder-settings']['masks-folder']));
+        self::set_variable('SPRITES_ROOT', ROOT_DIR . ($settings['folder-settings']['sprites-folder']));
+        self::set_variable('MASKS_ROOT', ROOT_DIR . ($settings['folder-settings']['masks-folder']));
 
         /* camera main image url */
-        defined('IMAGE_URL') || define('IMAGE_URL', str_replace('[SERVER_CAMERA]', SERVER_CAMERA, str_replace('[HOTEL_COUNTRY]', HOTEL_COUNTRY, $image_url)));
+        self::set_variable('IMAGE_URL', str_replace('[SERVER_CAMERA]', SERVER_CAMERA, str_replace('[HOTEL_COUNTRY]', HOTEL_COUNTRY, $image_url)));
 
         /* camera thumbnail image url */
-        defined('IMAGE_SMALL_URL') || define('IMAGE_SMALL_URL', str_replace('[SERVER_CAMERA_S]', SERVER_CAMERA_S, str_replace('[HOTEL_COUNTRY_S]', HOTEL_COUNTRY_S, $image_small_url)));
+        self::set_variable('IMAGE_SMALL_URL', str_replace('[SERVER_CAMERA_S]', SERVER_CAMERA_S, str_replace('[HOTEL_COUNTRY_S]', HOTEL_COUNTRY_S, $image_small_url)));
     }
 
     /**
@@ -329,21 +412,31 @@ final class CameraGD
         $height = imagesy($image);
 
         // recolor every pixel
-        for ($x = 0; $x < $width; $x++):
-            for ($y = 0; $y < $height; $y++):
+        for ($x = 0; $x < $width; $x++) for ($y = 0; $y < $height; $y++) self::part_recolor($image, $red, $green, $blue, $x, $y);
+    }
 
-                // get rgb of the pixel
-                $rgb = imagecolorsforindex($image, (imagecolorat($image, $x, $y)));
+    /**
+     * recolor specific pixel of a given image
+     *
+     * @param $image
+     * @param int $red
+     * @param int $green
+     * @param int $blue
+     * @param int $x
+     * @param int $y
+     */
+    static private function part_recolor(&$image, $red = 255, $green = 255, $blue = 255, $x = 0, $y = 0)
+    {
+        // get rgb of the pixel
+        $rgb = imagecolorsforindex($image, (imagecolorat($image, $x, $y)));
 
-                // put the rgb color
-                $r = (($red / 255) * ($rgb['red']));
-                $g = (($green / 255) * ($rgb['green']));
-                $b = (($blue / 255) * ($rgb['blue']));
+        // put the rgb color
+        $r = (($red / 255) * ($rgb['red']));
+        $g = (($green / 255) * ($rgb['green']));
+        $b = (($blue / 255) * ($rgb['blue']));
 
-                // set the new pixel
-                imagesetpixel($image, $x, $y, (imagecolorallocatealpha($image, $r, $g, $b, ($rgb['alpha']))));
-            endfor;
-        endfor;
+        // set the new pixel
+        imagesetpixel($image, $x, $y, (imagecolorallocatealpha($image, $r, $g, $b, ($rgb['alpha']))));
     }
 
     /**
@@ -351,6 +444,10 @@ final class CameraGD
      * @source http://forums.devnetwork.net/viewtopic.php?f=1&t=103330#p553333
      * @author RedMonkey
      * @editor Claudio Santoro
+     *
+     * "@observation Sorry of this function need to be big. Is because the simpliest approaches found in internet"
+     * "doesn't work as well that these approach.."
+     * "i know oop need small functions, but sorry"
      *
      * @param resource $dst Destination Allocated Image
      * @param resource $src Source Allocated Image
@@ -440,6 +537,65 @@ final class CameraGD
     }
 
     /**
+     * render specific tex_col
+     *
+     * @param array $tex_col
+     * @param array $color_rgb
+     * @param array $polygon_array
+     */
+    private function render_tex_col($tex_col = [], $color_rgb = [], $polygon_array = [])
+    {
+        /* sure that happen? */
+        if (empty($tex_col)) return;
+
+        /* jingle */
+        if ((isset($tex_col['flipH'])) && (stripos('_flipH', $tex_col['assetNames'][0] !== false))) $tex_col['assetNames'] = str_ireplace('_flipH', '', ($tex_col['assetNames'][0]));
+
+        /* let's create a image.. */
+        if (is_bool($tex_cols_asset = @imagecreatefrompng(MASKS_ROOT . $tex_col['assetNames'][0] . '.png'))) return;
+
+        /* soo flip, soo flip, flip. */
+        if (isset($tex_col['flipH']) && ($tex_col['flipH'] == 'true')) imageflip($tex_cols_asset, IMG_FLIP_HORIZONTAL);
+
+        /* really, tha color is really bad.. */
+        $this->image_recolor($tex_cols_asset, $color_rgb[0], $color_rgb[1], $color_rgb[2]);
+        imagesettile($this->image, $tex_cols_asset);
+
+        /* the tex_cols must be putted back into original image, y? */
+        imagefilledpolygon($this->image, $polygon_array, (count($polygon_array) / 2), IMG_COLOR_TILED);
+
+        /* no garbage, sir */
+        imagedestroy($tex_cols_asset);
+    }
+
+    /**
+     * render specific mask
+     *
+     * @param array $mask
+     * @param array $plane
+     */
+    private function render_mask($mask = [], $plane = [])
+    {
+        /* sure that happend? */
+        if (empty($mask)) return;
+
+        /* jingle */
+        if ((isset($mask['flipH'])) && (stripos('_flipH', $mask['name'] !== false))) $mask['name'] = str_ireplace('_flipH', '', ($mask['name']));
+
+        /* dingle bells.. */
+        if (is_bool($mask_asset = @imagecreatefrompng(MASKS_ROOT . $mask['name'] . '.png'))) return;
+
+        /* soo flip, soo flip, flip. */
+        if (isset($mask['flipH']) && ($mask['flipH'] == 'true')) imageflip($mask_asset, IMG_FLIP_HORIZONTAL);
+
+        /* copy me please, and put me into original! */
+        imagecopy($this->image, $mask_asset, $plane['cornerPoints'][1]['x'] + $mask['location']['x'], $mask['location']['y'] * 3, 0, 0, imagesx($mask_asset), imagesy($mask_asset));
+
+        /* no garbage, sir */
+        imagedestroy($mask_asset);
+    }
+
+    /**
      * render all the planes of the fuckin xit ;)
      * @author TyrexFR
      * @author sant0ro
@@ -470,54 +626,10 @@ final class CameraGD
             imagefilledpolygon($this->image, $polygon_array, (count($polygon_array) / 2), $color);
 
             /* get tex_cols of every plane */
-            if (array_key_exists('texCols', $plane)):
-                foreach ($plane['texCols'] as $tex_col):
-                    /* sure that happend? */
-                    if (empty($tex_col)) continue;
-
-                    /* jingle */
-                    if ((isset($tex_col['flipH'])) && (stripos('_flipH', $tex_col['assetNames'][0] !== false))) $mask['assetNames'] = str_ireplace('_flipH', '', ($tex_col['assetNames'][0]));
-
-                    /* let's create a image.. */
-                    if (is_bool($tex_cols_asset = @imagecreatefrompng(MASKS_ROOT . $tex_col['assetNames'][0] . '.png'))) continue;
-
-                    /* soo flip, soo flip, flip. */
-                    if (isset($mask['flipH']) && ($mask['flipH'] == 'true')) imageflip($tex_cols_asset, IMG_FLIP_HORIZONTAL);
-
-                    /* really, tha color is really bad.. */
-                    $this->image_recolor($tex_cols_asset, $color_rgb[0], $color_rgb[1], $color_rgb[2]);
-                    imagesettile($this->image, $tex_cols_asset);
-
-                    /* the texcols must be putted back into original image, y? */
-                    imagefilledpolygon($this->image, $polygon_array, (count($polygon_array) / 2), IMG_COLOR_TILED);
-
-                    /* no garbage, sir */
-                    imagedestroy($tex_cols_asset);
-                endforeach;
-            endif;
+            if (array_key_exists('texCols', $plane)) foreach ($plane['texCols'] as $tex_col) $this->render_tex_col($tex_col, $color_rgb, $polygon_array);
 
             /* get masks of every plane */
-            if (array_key_exists('masks', $plane)):
-                foreach ($plane['masks'] as $mask):
-                    /* sure that happend? */
-                    if (empty($mask)) continue;
-
-                    /* jingle */
-                    if ((isset($mask['flipH'])) && (stripos('_flipH', $mask['name'] !== false))) $mask['name'] = str_ireplace('_flipH', '', ($mask['name']));
-
-                    /* dingle bells.. */
-                    if (is_bool($mask_asset = @imagecreatefrompng(MASKS_ROOT . $mask['name'] . '.png'))) continue;
-
-                    /* soo flip, soo flip, flip. */
-                    if (isset($mask['flipH']) && ($mask['flipH'] == 'true')) imageflip($mask_asset, IMG_FLIP_HORIZONTAL);
-
-                    /* copy me please, and put me into original! */
-                    imagecopy($this->image, $mask_asset, $plane['cornerPoints'][1]['x'] + $mask['location']['x'], $mask['location']['y'] * 3, 0, 0, imagesx($mask_asset), imagesy($mask_asset));
-
-                    /* no garbage, sir */
-                    imagedestroy($mask_asset);
-                endforeach;
-            endif;
+            if (array_key_exists('masks', $plane)) foreach ($plane['masks'] as $mask) $this->render_mask($mask, $plane);
 
             /* adele says, this is the end (jingle) */
         endforeach;
@@ -667,7 +779,7 @@ $settings = [
             'server-camera' => 'servercamera', // base folder
             'hotel-country' => 'default', // default will use get country code. you can set manually a country code.
             'image-name' => 'default', // using default will use the json-data for name, recommended use default.
-            'image-url' => '[SERVER_CAMERA_S]/purchased/[HOTEL_COUNTRY_S]/[IMAGE_URL_S].png'
+            'image-url' => '[SERVER_CAMERA_S]/purchased/[HOTEL_COUNTRY_S]/[IMAGE_SMALL_URL].png'
         ]
     ],
     'folder-settings' => [
