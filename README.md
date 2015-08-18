@@ -1,5 +1,5 @@
 # Habbo Server Camera
-PhP Class, to Emulate Sulake's Habbo Hotel "in-game" Camera Applet.
+PHP Class, to Emulate Sulake's Habbo Hotel "in-game" Camera Applet.
 
 ### About
 
@@ -31,28 +31,28 @@ GNU General Public License for more details.
 - Enjoy.
 
 #### Test if ServerCamera is Working
-> You can Use The Test jSON for test ServerCamera. *(putting servercamera.php?test=true)*
+> You can Use The Test JSON for test ServerCamera. *(putting servercamera.php?test=true)*
 
 #### Assets
 > You need Habbo's Assets to Make the ServerCamera generate the Images. All Assets are available [here](https://github.com/sant0ro/habbo-asset-extractor)
-> **Attention**: Assets will be downloaded in correct folders. You Need Execute assets.php, figures.php, masks.php
+> **Attention**: Assets will be downloaded in correct folders. You need to execute assets.php, figures.php, masks.php
 
 #### Default Folders
 - Default Folder for Mask Assets: /masks/
 - Default Folder for Sprites Assets: /sprites/
 - Default Folder for Generated Image: /servercamera/purchased/
 
-#### Pre-Requisites
-- Need PhP 5.4x or Later
-- GD Library of PhP
+#### Prerequisites
+- Need PHP 5.4x or Later
+- PHP GD Image Processing Library
 - HTTP Server (Commonly Web Server)
-- The Following Mime-Types
-  - Image/PNG
-  - Text/Javascript
-  - Text/jSON
-  - Application/PhP
-  - Script/PhP
-  - Application/Javascript
+- The Following MIME-Types
+  - image/png
+  - text/javascript
+  - text/json
+  - application/php
+  - script/php
+  - application/javascript
 - Ensure the file has Write Permissions. (LINUX users)
 
 #### Security
@@ -61,7 +61,7 @@ an Adobe Flash Crosddomain Policy (X-CORS) file "crossdomain.xml". Without that 
 [Read More Here](http://www.adobe.com/devnet/articles/crossdomain_policy_file_spec.html)
 
 #### Warning
-> the Installation Procedure and Test Procedure only will work in localhost, or in a ip from the white-list Array.
+> The installation function and test function only will work in localhost, or in a IP address specified in the white-list array.
 
 #### Dudes? Issues?
 **Post [Here](https://github.com/sant0ro/habbo-camera-server/issues)**
